@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Portal Matematika SMA - Integrated</title>
+    <title>Portal Matematika SMA - Admin & Student</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
@@ -12,10 +12,11 @@
             --white: #ffffff;
             --success: #10b981;
             --danger: #ef4444;
+            --dark: #2d3748;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg); color: #333; min-height: 100vh; overflow-x: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg); color: var(--dark); min-height: 100vh; overflow-x: hidden; }
 
         /* Login Screen */
         .login-container { position: fixed; inset: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); 
@@ -37,16 +38,16 @@
         .page { display: none; background: var(--white); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .page.active { display: block; animation: fadeIn 0.4s ease; }
 
-        /* Stats & Cards */
+        /* Components */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 20px 0; }
         .stat-box { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 20px; border-radius: 10px; text-align: center; }
-        .card { background: #f8f9fa; border: 1px solid #e5e7eb; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-
-        /* Interactive Elements */
+        .card { background: #f8f9fa; border: 1px solid #e5e7eb; padding: 20px; border-radius: 10px; margin-bottom: 20px; position: relative; }
+        
         .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); }
         .option { display: block; width: 100%; text-align: left; padding: 12px; margin: 8px 0; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; }
         .option:hover { background: #f0f0f0; }
+        
         .correct { background: var(--success) !important; color: white; border-color: var(--success); }
         .wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
 
@@ -84,17 +85,14 @@
             <button class="option" onclick="showPage('grafik')">📈 Grafik Fungsi</button>
             <hr style="margin: 10px 0;">
             <button class="option" onclick="showPage('kelas10')">📚 Materi Kelas 10</button>
-            <button class="option" onclick="showPage('kelas11')">📚 Materi Kelas 11</button>
+            <hr style="margin: 10px 0;">
+            <button class="option" style="color: var(--secondary); font-weight: bold;" onclick="checkAdmin()">🔑 Admin Panel</button>
         </nav>
 
         <main>
             <div id="home" class="page active">
                 <h1>Halo, <span id="userName">Siswa</span>!</h1>
-                <p style="margin-top: 10px; color: #666;">Selamat datang di platform pembelajaran matematika. Semua progres Anda akan tersimpan secara otomatis ke database.</p>
-                <div class="card" style="margin-top: 20px;">
-                    <h4>Informasi:</h4>
-                    <p>Gunakan menu Grafik untuk memvisualisasikan fungsi matematika atau buka Dashboard untuk melihat skor latihan Anda.</p>
-                </div>
+                <p style="margin-top: 10px; color: #666;">Selamat datang di platform pembelajaran matematika. Semua progres Anda akan tersimpan secara otomatis.</p>
             </div>
 
             <div id="dashboard" class="page">
@@ -109,25 +107,34 @@
             <div id="grafik" class="page">
                 <h2>Pembuat Grafik Fungsi</h2>
                 <div class="card">
-                    <input type="text" id="funcExpr" placeholder="Contoh: x*x atau Math.sin(x)" value="x*x">
+                    <input type="text" id="funcExpr" placeholder="Contoh: x*x" value="x*x">
                     <button class="btn" onclick="drawGraph()">Gambar Grafik</button>
                     <canvas id="graphCanvas"></canvas>
                 </div>
             </div>
 
             <div id="kelas10" class="page">
-                <h2>Eksponen & Logaritma</h2>
+                <h2>Eksponen</h2>
                 <div class="card">
-                    <p><strong>Soal 1:</strong> Nilai dari 2³ adalah...</p>
+                    <p><strong>Soal:</strong> Hasil dari 2³ adalah...</p>
                     <button class="option quiz-opt" data-correct="false">6</button>
                     <button class="option quiz-opt" data-correct="true">8</button>
-                    <button class="option quiz-opt" data-correct="false">16</button>
+                    <button class="option quiz-opt" data-correct="false">9</button>
                 </div>
-
                 <div class="card">
                     <h3>Kirim Tugas Mandiri</h3>
-                    <textarea id="tugas10" placeholder="Jelaskan apa itu bilangan real menurut pendapatmu..."></textarea>
+                    <textarea id="tugas10" placeholder="Jelaskan apa itu bilangan eksponen..."></textarea>
                     <button class="btn" onclick="submitTask('tugas10')">Kirim Tugas</button>
+                </div>
+            </div>
+
+            <div id="adminPage" class="page">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Admin Panel - Data Tugas</h2>
+                    <button class="btn" onclick="loadAllTasks()">🔄 Refresh</button>
+                </div>
+                <div id="adminTaskContainer">
+                    <p>Klik refresh untuk memuat data...</p>
                 </div>
             </div>
         </main>
@@ -136,7 +143,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCMremHZk0GuqK137wRujQXKeMzEZGV_Yc",
@@ -154,14 +161,14 @@
 
         let userStats = { total: 0, benar: 0 };
 
-        // --- AUTH LOGIC ---
+        // --- AUTH ---
         document.getElementById('loginForm').onsubmit = async (e) => {
             e.preventDefault();
             const email = document.getElementById('emailInput').value;
             const pass = document.getElementById('passInput').value;
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
-            } catch (err) { alert("Login Gagal! Pastikan email & password benar."); }
+            } catch (err) { alert("Email atau Password salah!"); }
         };
 
         document.getElementById('logoutBtn').onclick = () => signOut(auth);
@@ -178,34 +185,33 @@
             }
         });
 
-        // --- DATABASE LOGIC ---
+        // --- DATA SYNC ---
         async function fetchUserData(uid) {
-            const docRef = doc(db, "users", uid);
-            const snap = await getDoc(docRef);
+            const ref = doc(db, "users", uid);
+            const snap = await getDoc(ref);
             if (snap.exists()) {
                 userStats = snap.data();
             } else {
                 userStats = { total: 0, benar: 0, email: auth.currentUser.email };
-                await setDoc(docRef, userStats);
+                await setDoc(ref, userStats);
             }
-            updateDashboardUI();
+            updateUI();
         }
 
         async function saveProgress(correct) {
             userStats.total++;
-            if (correct) userStats.benar++;
-            updateDashboardUI();
-            
+            if(correct) userStats.benar++;
+            updateUI();
             await updateDoc(doc(db, "users", auth.currentUser.uid), {
                 total: userStats.total,
                 benar: userStats.benar,
-                lastUpdate: serverTimestamp()
+                updatedAt: serverTimestamp()
             });
         }
 
         window.submitTask = async (id) => {
             const content = document.getElementById(id).value;
-            if (!content) return alert("Jawaban tidak boleh kosong!");
+            if(!content) return alert("Isi jawaban dulu!");
             try {
                 await setDoc(doc(db, "tugas", `${auth.currentUser.uid}_${id}`), {
                     uid: auth.currentUser.uid,
@@ -213,19 +219,52 @@
                     konten: content,
                     timestamp: serverTimestamp()
                 });
-                alert("Tugas Terkirim!");
+                alert("Tugas Berhasil Terkirim!");
                 document.getElementById(id).value = "";
             } catch (e) { alert("Error: " + e.message); }
         };
 
-        function updateDashboardUI() {
+        // --- ADMIN LOGIC ---
+        window.checkAdmin = () => {
+            const pass = prompt("Masukkan Password Admin:");
+            if (pass === "Daniel123") {
+                showPage('adminPage');
+                loadAllTasks();
+            } else {
+                alert("Akses Ditolak!");
+            }
+        };
+
+        window.loadAllTasks = async () => {
+            const container = document.getElementById('adminTaskContainer');
+            container.innerHTML = "<p>Memuat data tugas...</p>";
+            try {
+                const q = query(collection(db, "tugas"), orderBy("timestamp", "desc"));
+                const snap = await getDocs(q);
+                let html = "";
+                snap.forEach((doc) => {
+                    const d = doc.data();
+                    const date = d.timestamp ? d.timestamp.toDate().toLocaleString('id-ID') : 'Baru saja';
+                    html += `
+                        <div class="card" style="border-left: 4px solid var(--primary)">
+                            <small>${date}</small>
+                            <p><strong>${d.email}</strong></p>
+                            <p style="margin-top:8px; color:#444;">${d.konten}</p>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html || "<p>Belum ada data.</p>";
+            } catch (e) { container.innerHTML = "<p>Gagal memuat. Cek Rules Firestore.</p>"; }
+        };
+
+        // --- UI & TOOLS ---
+        function updateUI() {
             document.getElementById('totalQ').innerText = userStats.total;
             document.getElementById('correctQ').innerText = userStats.benar;
             const score = userStats.total > 0 ? Math.round((userStats.benar / userStats.total) * 100) : 0;
             document.getElementById('scoreP').innerText = score + "%";
         }
 
-        // --- UI & TOOLS ---
         window.showPage = (id) => {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -244,45 +283,33 @@
             overlay.classList.remove('active');
         };
 
-        // Quiz Logic
         document.querySelectorAll('.quiz-opt').forEach(btn => {
-            btn.addEventListener('click', function() {
-                if (this.parentElement.classList.contains('done')) return;
-                const isCorrect = this.dataset.correct === "true";
-                this.classList.add(isCorrect ? 'correct' : 'wrong');
+            btn.onclick = function() {
+                if(this.parentElement.classList.contains('done')) return;
+                const correct = this.dataset.correct === "true";
+                this.classList.add(correct ? 'correct' : 'wrong');
                 this.parentElement.classList.add('done');
-                saveProgress(isCorrect);
-            });
+                saveProgress(correct);
+            };
         });
 
-        // Graph Logic
         window.drawGraph = () => {
             const canvas = document.getElementById('graphCanvas');
             const ctx = canvas.getContext('2d');
             const expr = document.getElementById('funcExpr').value;
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.beginPath();
-            ctx.strokeStyle = '#ddd';
-            ctx.moveTo(0, 150); ctx.lineTo(300, 150); // X-Axis
-            ctx.moveTo(150, 0); ctx.lineTo(150, 300); // Y-Axis
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.strokeStyle = '#667eea';
-            ctx.lineWidth = 2;
-            for (let x = -10; x <= 10; x += 0.1) {
+            ctx.clearRect(0,0,300,300);
+            ctx.beginPath(); ctx.strokeStyle = '#eee';
+            ctx.moveTo(0,150); ctx.lineTo(300,150); ctx.moveTo(150,0); ctx.lineTo(150,300); ctx.stroke();
+            ctx.beginPath(); ctx.strokeStyle = '#667eea'; ctx.lineWidth = 2;
+            for(let x=-10; x<=10; x+=0.1) {
                 try {
                     const y = eval(expr.replace(/x/g, `(${x})`));
-                    const px = 150 + x * 15;
-                    const py = 150 - y * 15;
-                    if (x === -10) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
-                } catch (e) {}
+                    const px = 150 + x*15; const py = 150 - y*15;
+                    if(x===-10) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                } catch(e) {}
             }
             ctx.stroke();
         };
-
         window.onload = drawGraph;
     </script>
 </body>
